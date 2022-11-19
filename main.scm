@@ -10,7 +10,7 @@
 ;; The string pattern equivalent of these doesn't match special chars e.g ' ' and
 ;; '(' for some reason, which is why they are written in sexp
 (define-peg-pattern notGrave         body (or (range #\x07 #\x5F) (range #\x61 #\x10FFFF)))
-(define-peg-pattern notDollarOrGrave body (or (range #\x07 #\x23) (range #\x25 #\x5F) (range #\x61 #\x10FFFF)))
+(define-peg-pattern notDollar        body (or (range #\x07 #\x10FFFF)))
 (define-peg-pattern notRCB           body (or (range #\x07 #\x7C) (range #\x7E #\x10FFFF)))
 (define-peg-pattern notParen         body (or (range #\x07 #\x27) (range #\x2a #\x10FFFF)))
 (define-peg-pattern notNL            body (or (range #\x07 #\x09) (range #\x0b #\x10FFFF)))
@@ -50,7 +50,7 @@ COLON < ':'
 NUMBER <- [0-9]
 BACKSLASH < '\\'
 GRAVE < '`'
-snippetText <- (escapedDollarOrGrave / notDollarOrGrave)* ")
+snippetText <- (escapedDollarOrGrave / notDollar) ")
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (parse-snippet snippet)
@@ -151,5 +151,19 @@ $0" . (yasnippet
          (transformationExpr
           "(make-string (string-width yas-text) ?\\=)"))
         "\n\n"
-        (tabStop (number "0")))))))
+        (tabStop (number "0")))))
+   ;; unescaped verbatim dollar in snippet text
+   ("# -*- mode: snippet -*-
+# name: complexity
+# key: comp
+# --
+\\complexity{$O($0)$}
+" . (yasnippet
+     (metadata
+      ((key "name") (value "complexity"))
+      ((key "key") (value "comp")))
+     (snippet
+      "\\complexity{$O("
+      (tabStop (number "0"))
+      ")$}\n")))))
 
