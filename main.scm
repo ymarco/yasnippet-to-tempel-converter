@@ -19,7 +19,7 @@
 (define-peg-string-patterns
   "yasnippet <-- preamble? snippet !.
 preamble <- (modeline metadata? metadataEnd) / (metadata? metadataEnd)
-modeline < '# -*-' notNL* '-*-' NL+
+modeline < '# -*-' (notNL !'*-')* '-*-' NL+
 metadata <-- metadataLine+
 metadataLine <- mtStart key mtSep value NL+
 key <-- ([a-zA-Z_] / '-')+
