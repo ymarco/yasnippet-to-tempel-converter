@@ -7,6 +7,13 @@
          (snippet (get-string-all port)))
     (close-port port)
     snippet))
+;; The string pattern equivalent of these doesn't match special chars e.g ' ' and
+;; '(' for some reason, which is why they are written in sexp
+(define-peg-pattern notGrave         body (or (range #\x07 #\x5F) (range #\x61 #\x10FFFF)))
+(define-peg-pattern notDollarOrGrave body (or (range #\x07 #\x23) (range #\x25 #\x5F) (range #\x61 #\x10FFFF)))
+(define-peg-pattern notRCB           body (or (range #\x07 #\x7C) (range #\x7E #\x10FFFF)))
+(define-peg-pattern notParen         body (or (range #\x07 #\x27) (range #\x2a #\x10FFFF)))
+(define-peg-pattern notNL            body (or (range #\x07 #\x09) (range #\x0b #\x10FFFF)))
 
 
 (define-peg-string-patterns
@@ -44,14 +51,6 @@ NUMBER <- [0-9]
 BACKSLASH < '\\'
 GRAVE < '`'
 snippetText <- (escapedDollarOrGrave / notDollarOrGrave)* ")
-
-;; The string pattern equivalent of this doesn't match special chars e.g ' ' and
-;; '(' for some reason, which is why they are written in sexp
-(define-peg-pattern notGrave         body (or (range #\x07 #\x5F) (range #\x61 #\x10FFFF)))
-(define-peg-pattern notDollarOrGrave body (or (range #\x07 #\x23) (range #\x25 #\x5F) (range #\x61 #\x10FFFF)))
-(define-peg-pattern notRCB           body (or (range #\x07 #\x7C) (range #\x7E #\x10FFFF)))
-(define-peg-pattern notParen         body (or (range #\x07 #\x27) (range #\x2a #\x10FFFF)))
-(define-peg-pattern notNL            body (or (range #\x07 #\x09) (range #\x0b #\x10FFFF)))
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (parse-snippet snippet)
