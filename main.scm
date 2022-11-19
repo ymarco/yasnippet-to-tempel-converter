@@ -1,6 +1,8 @@
 (use-modules (ice-9 peg)
              (ice-9 textual-ports)
-             (ice-9 pretty-print))
+             (ice-9 pretty-print)
+             (ice-9 match)
+             (srfi srfi-9))
 
 (define *yasnippet*
   (let* ((port (open-input-file "/home/ym/.config/doom/snippets/emacs-lisp-mode/overlay-put"))
@@ -197,4 +199,93 @@ $>$0)" . (yasnippet (snippet
 ;; aoeu" . (yasnippet))
    ))
 
+(define-record-type <yasnippet>
+  (make-yasnippet name key group uuid type
+                  condition binding contributor
+                  body)
+  yasnippet?
+  (name yas-name)
+  (key yas-key)
+  (group yas-group)
+  (uuid yas-uuid)
+  (type yas-type)
+  (condition yas-condition)
+  (binding yas-binding)
+  (contributor yas-contributor)
+  (body yas-body))
 
+(define (parsed-snippet->yasnippet parsed)
+  (let ((name #f) (key #f) (group #f) (uuid #f) (type #f)
+        (condition #f) (binding #f) (contributor #f)
+        (body #f))
+    (match parsed
+      (('yasnippet ('metadata (('key keys)
+                               ('value values)) ...) ...
+                               ('snippet . body))
+       ;; parse metadata
+       (map (lambda (key value)
+              (match key
+                ("name" (set! name value))
+                ("key" (set! key value))
+                ("group" (set! group value))
+                ("uuid" (set! uuid value))
+                ("type" (set! type value))
+                ("condition" (set! condition value))
+                ("binding" (set! binding value))
+                ("contributor" (set! contributor value))
+                (_ (throw 'invalid-metadata-type-error key value))))
+            keys values)
+       (make-yasnippet name key group uuid type
+                       condition binding contributor
+                       body)))))
+
+(define (placeholder-number->symbol n)
+  "2 => 'field-2"
+  (string->symbol (string-append "field-" (number->string n))))
+(placeholder-number->symbol 8)
+
+(define (yasnippet->tempel-snippet yas)
+  ;; TODO do stuff with contributor, group, uuid, type, condition
+
+  ;; determine which placeholders need names
+  (let ((placeholder-names (make-hash-table)))
+    (for-each (lambda (atom)
+                (match atom
+                  (('tab-stop ('number number))
+                   (set! number (string->number number))
+                   (match (hash-ref placeholder-names number)
+                     (#f (hash-set! placeholder-names number 'anonymous))
+                     ('anonymous (hash-set! placeholder-names number
+                                            (placeholder-number->symbol number)))))
+                  (_ #f)))
+              (yas-body yas))
+    ;; final result
+    (cons (yas-key yas)
+          (map (lambda (atom)
+                 (match atom
+                   ((? string?)
+                    atom)
+                   (('tab-stop
+                     ('number number)
+                     more ...)
+                    (match (hash-ref placeholder-names (string->number number))
+                      ('anonymous
+                       'p)
+                      ((and (? symbol?)
+                            name)
+                       `(s ,name))))
+                   (('embedded-lisp code)
+                    ;; TODO read sexp(s)
+                    #t)))
+               (yas-body yas)))))
+
+(define (yas-string->tempel s)
+  (yasnippet->tempel-snippet (parsed-snippet->yasnippet (parse-snippet s))))
+
+(test-fn
+ yas-string->tempel
+ '(("help" . (#f "help"))
+   ("help$0" . (#f "help" p))
+   ("help$0 $0" . (#f "help" (s field-0) " " (s field-0)))
+   ;; ("help `(current-time-string)`" . (#f "help " (current-time-string)))
+   ))
