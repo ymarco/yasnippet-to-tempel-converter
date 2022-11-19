@@ -251,7 +251,10 @@ $>$0)" . (yasnippet (snippet
   (call-with-input-string s read))
 
 (define (yasnippet->tempel-snippet yas)
-  ;; TODO do stuff with contributor, group, uuid, type, condition
+  "Return a single sexp defining a tempel snippet with the same key and expantion
+as yas.
+
+contributor, group, uuid, type, condition are ignored"
 
   ;; determine which placeholders need names
   (let ((placeholder-names (make-hash-table)))
@@ -285,15 +288,15 @@ $>$0)" . (yasnippet (snippet
                                (read-from-string expr)))
                          ,(placeholder-number->symbol number)))
                       ((('transformation-expr expr))
-                       (read-from-string expr)
-                       ;; yas mirror transformations act on yas-text as the
-                       ;; current field, while tempel has a var for each field
                        (let replace-yas-text ((expr (read-from-string expr)))
+                         ;; yas mirror transformations act on yas-text as the
+                         ;; current field, while tempel has a var for each field.
+                         ;; Replace yas-text with the corresponding field symbol.
+
+                         ;; TODO handle the case where expr is `yas-selected-text`
                          (match expr
                            ('yas-text
                             (placeholder-number->symbol number))
-                           ((or 'yas-selected-text '%)
-                            'r)
                            ((? list? expr)
                             (map replace-yas-text expr))
                            (_
@@ -302,17 +305,15 @@ $>$0)" . (yasnippet (snippet
                        (match (hash-ref placeholder-names number)
                          ('named
                           `(s ,(placeholder-number->symbol number)))
-                         (_
+                         ((or #f 'anonymous)
                           'p)))))
                    (('embedded-lisp expr)
-                    (let replace-yas-selected-text ((expr (read-from-string expr)))
-                      (match expr
-                        ((or 'yas-selected-text '%)
-                         'r)
-                        ((? list? expr)
-                         (map replace-yas-selected-text expr))
-                        (_
-                         expr))))))
+                    (let ((expr (read-from-string expr)))
+                      ;; a stand-alone `%` can become 'r
+                      (if (or (eq? expr 'yas-selected-text)
+                              (eq? expr '%))
+                          'r
+                          expr)))))
                (yas-body yas)))))
 
 (define (yas-string->tempel s)
@@ -320,8 +321,7 @@ $>$0)" . (yasnippet (snippet
 
 (test-fn
  yas-string->tempel
- '(
-   ;; metadata
+ '(;; metadata
    ("# -*- mode: snippet -*-
 # name: emacs_value
 # key: ev
@@ -343,4 +343,7 @@ emacs_value" . (ev "emacs_value"))
    ("$1${1:$(capitalize yas-text)}" . (unspecified-key (s field-1) (capitalize field-1)))
    ;; region
    ("`yas-selected-text`" . (unspecified-key r))
+   ("`%`" . (unspecified-key r))
+   ;; unsupported use case of yas-text
+   ("`(capitalize %)`" . (unspecified-key (capitalize %)))
    ))
