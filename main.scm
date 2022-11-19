@@ -30,7 +30,7 @@ initValue <-- (notRCB / embeddedLisp)*
 embeddedLisp <-- GRAVE notGrave* GRAVE
 
 transformationExpr <-- DOLLAR '(' balancedSexp ')'
-balancedSexp <- sexpText / '(' balancedSexp ')'
+balancedSexp <- (sexpText / '(' balancedSexp ')')*
 sexpText <- escapedParen / notParen
 escapedDollarOrGrave <- BACKSLASH ( DOLLAR / GRAVE)
 escapedParen <- '\\' ('(' / ')')
