@@ -189,11 +189,12 @@ $>$0)" . (yasnippet (snippet
                      (tab-stop (number "0"))
                      ")")))
    ;; comment in the metadata lines - WONTFIX
-   ;; ("# uuid: matrix
-   ;; # possible improvement, compute the number of lines from the argument to array
-   ;; # --
-   ;; aoeu" . (yasnippet))
-
+   ("# uuid: matrix
+# bla bla, comment not metadata
+# --
+aoeu" . (yasnippet
+         (snippet
+          "# uuid: matrix\n# bla bla, comment not metadata\n# --\naoeu")))
    ;; default value is a lisp expr
    ("${1:`(current-time-string)`}"
     . (yasnippet (snippet
