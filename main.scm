@@ -58,26 +58,24 @@ snippet-text <- (escapedDollarOrGrave / notGrave) ")
 (define (parse-snippet snippet)
   (peg:tree (match-pattern yasnippet snippet)))
 
-(define (test pairs)
+(define (test-fn fn pairs)
   (for-each (lambda (pair)
-              (let* ((snippet (car pair))
-                     (good-res (cdr pair))
-                     (res (parse-snippet snippet))
-                     ;; (res (car res))
-                     ;; (good-resres (car good-res))
-                     )
-                (unless (equal? res good-res)
+              (let* ((in (car pair))
+                     (expected-res (cdr pair))
+                     (res (fn in)))
+                (unless (equal? res expected-res)
                   (display "Test failed: with input \n")
-                  (display snippet)
+                  (display in)
                   (display "\nThe output was\n")
                   (pretty-print res)
                   (display "\nInstead of\n")
-                  (pretty-print good-res)
+                  (pretty-print expected-res)
                   (display "\n"))))
             pairs)
   #f)
 
-(test
+(test-fn
+ parse-snippet
  ;; basic
  '(("aoeu" . (yasnippet
               (snippet "aoeu")))
