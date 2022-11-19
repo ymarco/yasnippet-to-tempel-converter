@@ -2,7 +2,8 @@
              (ice-9 textual-ports)
              (ice-9 pretty-print)
              (ice-9 match)
-             (srfi srfi-9))
+             (srfi srfi-9)
+             (srfi srfi-1))
 
 ;; The string pattern equivalent of these doesn't match special chars e.g ' ' and
 ;; '(' for some reason, which is why they are written in sexp
@@ -220,12 +221,10 @@ $>$0)" . (yasnippet (snippet
         (condition #f) (binding #f) (contributor #f)
         (body #f))
     (match parsed
-      (('yasnippet ('metadata (('key keys)
-                               ('value values)) ...) ...
-                               ('snippet . body))
+      (('yasnippet ('metadata (('key keys) ('value values)) ...) . _)
        ;; parse metadata
-       (map (lambda (key value)
-              (match key
+       (map (lambda (key_ value)
+              (match key_
                 ("name" (set! name value))
                 ("key" (set! key value))
                 ("group" (set! group value))
@@ -235,10 +234,14 @@ $>$0)" . (yasnippet (snippet
                 ("binding" (set! binding value))
                 ("contributor" (set! contributor value))
                 (_ (throw 'invalid-metadata-type-error key value))))
-            keys values)
-       (make-yasnippet name key group uuid type
-                       condition binding contributor
-                       body)))))
+            keys values))
+      (_ #f))
+    (let* ((snippet (last parsed))
+           (body (cdr snippet)))
+      (make-yasnippet name key group uuid type
+                      condition binding contributor
+                      body))))
+
 
 (define (placeholder-number->symbol n)
   "2 => 'field-2"
@@ -261,7 +264,9 @@ $>$0)" . (yasnippet (snippet
                   (_ #f)))
               (yas-body yas))
     ;; final result
-    (cons (yas-key yas)
+    (cons (if (yas-key yas)
+              (string->symbol (yas-key yas))
+              'unspecified-key)
           (map (lambda (atom)
                  (match atom
                    ((? string?)
@@ -308,16 +313,22 @@ $>$0)" . (yasnippet (snippet
 (test-fn
  yas-string->tempel
  '(
+   ;; metadata
+   ("# -*- mode: snippet -*-
+# name: emacs_value
+# key: ev
+# --
+emacs_value" . (ev "emacs_value"))
    ;; basic
-   ("help" . (#f "help"))
+   ("help" . (unspecified-key "help"))
    ;; field
-   ("help$1" . (#f "help" p))
+   ("help$1" . (unspecified-key "help" p))
    ;; field with mirror
-   ("help$1 $1" . (#f "help" (s field-1) " " (s field-1)))
+   ("help$1 $1" . (unspecified-key "help" (s field-1) " " (s field-1)))
    ;; field with default
-   ("help${1:default}" . (#f "help" (p "default" field-1)))
+   ("help${1:default}" . (unspecified-key "help" (p "default" field-1)))
    ;; embedded lisp
-   ("help `(current-time-string)`" . (#f "help " (current-time-string)))
+   ("help `(current-time-string)`" . (unspecified-key "help " (current-time-string)))
    ;; field with default as embedded lisp
-   ("${1:`(current-time-string)`}" . (#f (p (current-time-string) field-1)))
+   ("${1:`(current-time-string)`}" . (unspecified-key (p (current-time-string) field-1)))
    ))
