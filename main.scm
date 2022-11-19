@@ -257,7 +257,7 @@ $>$0)" . (yasnippet (snippet
   (let ((placeholder-names (make-hash-table)))
     (for-each (lambda (atom)
                 (match atom
-                  (('tab-stop ('number number))
+                  (('tab-stop ('number number) _more ...)
                    (match (hash-ref placeholder-names number)
                      (#f (hash-set! placeholder-names number 'anonymous))
                      ('anonymous (hash-set! placeholder-names number 'named))))
@@ -288,15 +288,16 @@ $>$0)" . (yasnippet (snippet
                        (read-from-string expr)
                        ;; yas mirror transformations act on yas-text as the
                        ;; current field, while tempel has a var for each field
-                       ;; (let replace-yas-text ((expr (read-from-string expr)))
-                       ;;   (match expr
-                       ;;     ((or 'yas-text '%)
-                       ;;      (placeholder-number->symbol number))
-                       ;;     ((? list? expr)
-                       ;;      (map replace-yas-text expr))
-                       ;;     (_
-                       ;;      expr)))
-                       )
+                       (let replace-yas-text ((expr (read-from-string expr)))
+                         (match expr
+                           ('yas-text
+                            (placeholder-number->symbol number))
+                           ((or 'yas-selected-text '%)
+                            'r)
+                           ((? list? expr)
+                            (map replace-yas-text expr))
+                           (_
+                            expr))))
                       ('()
                        (match (hash-ref placeholder-names number)
                          ('named
@@ -304,7 +305,14 @@ $>$0)" . (yasnippet (snippet
                          (_
                           'p)))))
                    (('embedded-lisp expr)
-                    (read-from-string expr))))
+                    (let replace-yas-selected-text ((expr (read-from-string expr)))
+                      (match expr
+                        ((or 'yas-selected-text '%)
+                         'r)
+                        ((? list? expr)
+                         (map replace-yas-selected-text expr))
+                        (_
+                         expr))))))
                (yas-body yas)))))
 
 (define (yas-string->tempel s)
@@ -331,4 +339,8 @@ emacs_value" . (ev "emacs_value"))
    ("help `(current-time-string)`" . (unspecified-key "help " (current-time-string)))
    ;; field with default as embedded lisp
    ("${1:`(current-time-string)`}" . (unspecified-key (p (current-time-string) field-1)))
+   ;; mirror transformation
+   ("$1${1:$(capitalize yas-text)}" . (unspecified-key (s field-1) (capitalize field-1)))
+   ;; region
+   ("`yas-selected-text`" . (unspecified-key r))
    ))
