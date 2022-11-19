@@ -191,6 +191,12 @@ $>$0)" . (yasnippet (snippet
                      "(progn\n"
                      indent-mark
                      (tab-stop (number "0"))
-                     ")")))))
+                     ")")))
+   ;; comment in the metadata lines - WONTFIX
+   ;; ("# uuid: matrix
+;; # possible improvement, compute the number of lines from the argument to array
+;; # --
+;; aoeu" . (yasnippet))
+   ))
 
 
