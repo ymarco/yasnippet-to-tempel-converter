@@ -29,7 +29,7 @@ snippet <-- (tab-stop / indent-mark / embedded-lisp / snippet-text)*
 
 tab-stop <-- DOLLAR (number / (LCB (number COLON)? (transformation-expr / init-value) RCB))
 number <-- NUMBER
-init-value <-- (notRCB / embedded-lisp)*
+init-value <-- (embedded-lisp / notRCB)*
 
 indent-mark <-- INDENT-MARK
 embedded-lisp <-- GRAVE notGrave* GRAVE
@@ -189,10 +189,16 @@ $>$0)" . (yasnippet (snippet
                      ")")))
    ;; comment in the metadata lines - WONTFIX
    ;; ("# uuid: matrix
-;; # possible improvement, compute the number of lines from the argument to array
-;; # --
-;; aoeu" . (yasnippet))
-   ))
+   ;; # possible improvement, compute the number of lines from the argument to array
+   ;; # --
+   ;; aoeu" . (yasnippet))
+
+   ;; default value is a lisp expr
+   ("${1:`(current-time-string)`}"
+    . (yasnippet (snippet
+                  (tab-stop (number "1")
+                            (init-value
+                             (embedded-lisp "(current-time-string)"))))))))
 
 (define-record-type <yasnippet>
   (make-yasnippet name key group uuid type
