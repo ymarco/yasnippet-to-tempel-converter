@@ -4,11 +4,6 @@
              (ice-9 match)
              (srfi srfi-9))
 
-(define *yasnippet*
-  (let* ((port (open-input-file "/home/ym/.config/doom/snippets/emacs-lisp-mode/overlay-put"))
-         (snippet (get-string-all port)))
-    (close-port port)
-    snippet))
 ;; The string pattern equivalent of these doesn't match special chars e.g ' ' and
 ;; '(' for some reason, which is why they are written in sexp
 (define-peg-pattern notGrave         body (or (range #\x07 #\x5F) (range #\x61 #\x10FFFF)))
@@ -87,7 +82,7 @@ snippet-text <- (escapedDollarOrGrave / notGrave) ")
    ;; tab-stop with init-value
    ("aoeu${1:value})" . (yasnippet
                          (snippet "aoeu" (tab-stop (number "1")
-                                                  (init-value "value"))
+                                                   (init-value "value"))
                                   ")")))
    ;; escape sequences
    ("test\\`\\$\\`\\\\" . (yasnippet (snippet "test`$`\\")))
