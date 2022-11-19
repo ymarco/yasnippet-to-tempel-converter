@@ -242,8 +242,10 @@ $>$0)" . (yasnippet (snippet
 
 (define (placeholder-number->symbol n)
   "2 => 'field-2"
-  (string->symbol (string-append "field-" (number->string n))))
-(placeholder-number->symbol 8)
+  (string->symbol (string-append "field-" n)))
+
+(define (read-from-string s)
+  (call-with-input-string s read))
 
 (define (yasnippet->tempel-snippet yas)
   ;; TODO do stuff with contributor, group, uuid, type, condition
@@ -253,11 +255,9 @@ $>$0)" . (yasnippet (snippet
     (for-each (lambda (atom)
                 (match atom
                   (('tab-stop ('number number))
-                   (set! number (string->number number))
                    (match (hash-ref placeholder-names number)
                      (#f (hash-set! placeholder-names number 'anonymous))
-                     ('anonymous (hash-set! placeholder-names number
-                                            (placeholder-number->symbol number)))))
+                     ('anonymous (hash-set! placeholder-names number 'named))))
                   (_ #f)))
               (yas-body yas))
     ;; final result
@@ -265,19 +265,41 @@ $>$0)" . (yasnippet (snippet
           (map (lambda (atom)
                  (match atom
                    ((? string?)
-                    atom)
+                    atom)               ; TODO use n and n> from tempel
                    (('tab-stop
                      ('number number)
                      more ...)
-                    (match (hash-ref placeholder-names (string->number number))
-                      ('anonymous
-                       'p)
-                      ((and (? symbol?)
-                            name)
-                       `(s ,name))))
-                   (('embedded-lisp code)
-                    ;; TODO read sexp(s)
-                    #t)))
+
+                    ;; TODO handle the case where number = 0 (finish snippet)
+                    (match more
+                      ((('init-value value))
+                       `(p ,(match value
+                              ((? string?)
+                               value)
+                              (('embedded-lisp expr)
+                               (read-from-string expr)))
+                         ,(placeholder-number->symbol number)))
+                      ((('transformation-expr expr))
+                       (read-from-string expr)
+                       ;; yas mirror transformations act on yas-text as the
+                       ;; current field, while tempel has a var for each field
+                       ;; (let replace-yas-text ((expr (read-from-string expr)))
+                       ;;   (match expr
+                       ;;     ((or 'yas-text '%)
+                       ;;      (placeholder-number->symbol number))
+                       ;;     ((? list? expr)
+                       ;;      (map replace-yas-text expr))
+                       ;;     (_
+                       ;;      expr)))
+                       )
+                      ('()
+                       (match (hash-ref placeholder-names number)
+                         ('named
+                          `(s ,(placeholder-number->symbol number)))
+                         (_
+                          'p)))))
+                   (('embedded-lisp expr)
+                    (read-from-string expr))))
                (yas-body yas)))))
 
 (define (yas-string->tempel s)
@@ -285,8 +307,17 @@ $>$0)" . (yasnippet (snippet
 
 (test-fn
  yas-string->tempel
- '(("help" . (#f "help"))
-   ("help$0" . (#f "help" p))
-   ("help$0 $0" . (#f "help" (s field-0) " " (s field-0)))
-   ;; ("help `(current-time-string)`" . (#f "help " (current-time-string)))
+ '(
+   ;; basic
+   ("help" . (#f "help"))
+   ;; field
+   ("help$1" . (#f "help" p))
+   ;; field with mirror
+   ("help$1 $1" . (#f "help" (s field-1) " " (s field-1)))
+   ;; field with default
+   ("help${1:default}" . (#f "help" (p "default" field-1)))
+   ;; embedded lisp
+   ("help `(current-time-string)`" . (#f "help " (current-time-string)))
+   ;; field with default as embedded lisp
+   ("${1:`(current-time-string)`}" . (#f (p (current-time-string) field-1)))
    ))
