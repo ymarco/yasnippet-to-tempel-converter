@@ -308,7 +308,10 @@ contributor, group, uuid, type, condition are ignored"
                                value)
                               (('embedded-lisp expr)
                                (read-from-string expr)))
-                         ,(placeholder-number->symbol number)))
+                         ;; emit field name only if named
+                         ,@(if (eq? (hash-ref field-symbol-table number) 'named)
+                               (list (placeholder-number->symbol number))
+                               '())))
                       ((('transformation-expr expr))
                        (let replace-yas-text ((expr (read-from-string expr)))
                          ;; yas mirror transformations act on yas-text as the
@@ -356,21 +359,21 @@ emacs_value" . (ev "emacs_value"))
    ;; basic
    ("help" . (unspecified-key "help"))
    ;; field
-   ;; field with mirror
    ("help$1" . (unspecified-key "help" q))
+   ;; field with mirror - now it needs a name
    ("help$1 $1" . (unspecified-key "help" (s field-1) " " (s field-1)))
    ;; field with default
-   ("help${1:default}" . (unspecified-key "help" (p "default" field-1)))
+   ("help${1:default}" . (unspecified-key "help" (p "default")))
    ;; embedded lisp
    ("help `(current-time-string)`" . (unspecified-key "help " (current-time-string)))
    ;; field with default as embedded lisp
-   ("${1:`(current-time-string)`}" . (unspecified-key (p (current-time-string) field-1)))
+   ("${1:`(current-time-string)`}" . (unspecified-key (p (current-time-string))))
    ;; mirror transformation
    ("$1${1:$(capitalize yas-text)}" . (unspecified-key (s field-1) (capitalize field-1)))
    ;; region
    ("`yas-selected-text`" . (unspecified-key r))
    ("`%`" . (unspecified-key r))
-   ;; unsupported use case of yas-text
+   ;; unsupported use case of yas-text. this is the expected (mis)behavior
    ("`(capitalize %)`" . (unspecified-key (capitalize %)))
    ;; use 'q when appropriate
    ("if ($1) { $0 }" . (unspecified-key "if (" p ") { " q " }"))
