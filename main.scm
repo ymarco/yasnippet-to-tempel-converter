@@ -32,8 +32,8 @@ embeddedLisp <-- GRAVE notGrave* GRAVE
 transformationExpr <-- DOLLAR '(' balancedSexp ')'
 balancedSexp <- (sexpText / '(' balancedSexp ')')*
 sexpText <- escapedParen / notParen
-escapedDollarOrGrave <- BACKSLASH ( DOLLAR / GRAVE)
-escapedParen <- '\\' ('(' / ')')
+escapedDollarOrGrave <- BACKSLASH ( '$' / '`' / '\\')
+escapedParen <- '\\' ('(' / ')' / '\\')
 
 LCB < '{'
 RCB < '}'
