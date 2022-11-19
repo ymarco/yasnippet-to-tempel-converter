@@ -32,8 +32,8 @@ embeddedLisp <-- GRAVE notGrave* GRAVE
 transformationExpr <-- DOLLAR '(' balancedSexp ')'
 balancedSexp <- sexpText / '(' balancedSexp ')'
 sexpText <- escapedParen / notParen
-notParen <- [x20-27] / [x2a-10FFFF]
-escapedParen <- '\\\\' ('(' / ')')
+escapedDollarOrGrave <- BACKSLASH ( DOLLAR / GRAVE)
+escapedParen <- '\\' ('(' / ')')
 
 LCB < '{'
 RCB < '}'
@@ -43,12 +43,14 @@ COLON < ':'
 NUMBER <- [0-9]
 BACKSLASH < '\\'
 GRAVE < '`'
-snippetText <- (escapedDollarOrGrave / notDollarOrGrave)*
-notGrave <- [x20-x5F] / [x61-x10FFFF] / '\t' / '\n' / ' '
-notDollarOrGrave <- [x20-x23] / [x25-x5F] / [x61-x10FFFF] / '\t' / '\n' / ' '
-escapedDollarOrGrave <- BACKSLASH ( DOLLAR / GRAVE)
-notRCB <- [x20-x7C] / [x7E-x10FFFF] / '\t' / '\n' / ' '
-")
+snippetText <- (escapedDollarOrGrave / notDollarOrGrave)* ")
+
+;; The string pattern equivalent of this doesn't match special chars e.g ' ' and
+;; '(' for some reason, which is why they are written in sexp
+(define-peg-pattern notGrave         body (or (range #\x20 #\x5F) (range #\x61 #\x10FFFF)))
+(define-peg-pattern notDollarOrGrave body (or (range #\x20 #\x23) (range #\x25 #\x5F) (range #\x61 #\x10FFFF)))
+(define-peg-pattern notRCB           body (or (range #\x20 #\x7C) (range #\x7E #\x10FFFF)))
+(define-peg-pattern notParen         body (or (range #\x20 #\x27) (range #\x2a #\x10FFFF)))
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (parse-snippet snippet)
