@@ -16,7 +16,7 @@ modeline < '# -*- mode: snippet -*-' NL
 metadata <-- metadataLine+
 metadataLine <- mtStart key mtSep value NL
 key <-- ([a-zA-Z_] / '-')+
-value <-- ([a-zA-Z_] / '-')+
+value <-- notNL+
 metadataEnd < '# --' NL
 mtStart < '# '
 mtSep < ': '
@@ -51,6 +51,7 @@ snippetText <- (escapedDollarOrGrave / notDollarOrGrave)* ")
 (define-peg-pattern notDollarOrGrave body (or (range #\x07 #\x23) (range #\x25 #\x5F) (range #\x61 #\x10FFFF)))
 (define-peg-pattern notRCB           body (or (range #\x07 #\x7C) (range #\x7E #\x10FFFF)))
 (define-peg-pattern notParen         body (or (range #\x07 #\x27) (range #\x2a #\x10FFFF)))
+(define-peg-pattern notNL            body (or (range #\x07 #\x09) (range #\x0b #\x10FFFF)))
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (parse-snippet snippet)
@@ -98,7 +99,17 @@ emacs_value" . (yasnippet (metadata ((key "name") (value "emacs_value"))
                                     ((key "key") (value "ev")))
                           (snippet "emacs_value")))
 
-   ;; metadata with tabStops
+   ;; stupid metadata
+   ("# -*- mode: snippet -*-
+# name: left< right>
+# key: <
+# --
+aoeu" . (yasnippet (metadata
+                    ((key "name") (value "left< right>"))
+                    ((key "key") (value "<")))
+                   (snippet "aoeu")))
+
+   ;; tabStops
    ("(overlay-put ${1: ov} ${2:property} ${0:value})"
     . (yasnippet (snippet
                   "(overlay-put "
