@@ -266,6 +266,28 @@ contributor, group, uuid, type, condition are ignored"
                      ('anonymous (hash-set! field-symbol-table number 'named))))
                   (_ #f)))
               (yas-body yas))
+    ;; if the last (tab-stop) is the one you'll get to last when tabbing, map
+    ;; that number to 'last in field-symbol-table
+    (let ((max-number-tab-stop
+           (hash-fold (lambda (k v max-k)
+                        ;; 0 is the last one you jump to and therfore the max
+                        (if (and (not (equal? max-k "0"))
+                                 (or (string> k max-k)
+                                     (equal? k "0")))
+                            k
+                            max-k))
+                      "\x01" field-symbol-table))
+          (last-tab-stop-number
+           (fold (lambda (atom prev)
+                   (match atom
+                     (('tab-stop ('number number) _more ...)
+                      number)
+                     (_ prev)))
+                 "\x00" (yas-body yas))))
+      (when (and (equal? max-number-tab-stop last-tab-stop-number)
+                 (not (eq? (hash-ref field-symbol-table max-number-tab-stop) 'named)))
+        (hash-set! field-symbol-table max-number-tab-stop 'last)))
+
     ;; final result
     (cons (if (yas-key yas)
               (string->symbol (yas-key yas))
@@ -302,11 +324,15 @@ contributor, group, uuid, type, condition are ignored"
                            (_
                             expr))))
                       ('()
+                       ;; if no init-value, the field might be a mirror
                        (match (hash-ref field-symbol-table number)
                          ('named
                           `(s ,(placeholder-number->symbol number)))
+                         ;; not a mirror
                          ((or #f 'anonymous)
-                          'p)))))
+                          'p)
+                         ('last
+                          'q)))))
                    (('embedded-lisp expr)
                     (let ((expr (read-from-string expr)))
                       ;; a stand-alone `%` can become 'r
@@ -330,8 +356,8 @@ emacs_value" . (ev "emacs_value"))
    ;; basic
    ("help" . (unspecified-key "help"))
    ;; field
-   ("help$1" . (unspecified-key "help" p))
    ;; field with mirror
+   ("help$1" . (unspecified-key "help" q))
    ("help$1 $1" . (unspecified-key "help" (s field-1) " " (s field-1)))
    ;; field with default
    ("help${1:default}" . (unspecified-key "help" (p "default" field-1)))
@@ -346,4 +372,8 @@ emacs_value" . (ev "emacs_value"))
    ("`%`" . (unspecified-key r))
    ;; unsupported use case of yas-text
    ("`(capitalize %)`" . (unspecified-key (capitalize %)))
+   ;; use 'q when appropriate
+   ("if ($1) { $0 }" . (unspecified-key "if (" p ") { " q " }"))
+   ("if ($1) { $3 }" . (unspecified-key "if (" p ") { " q " }"))
+   ("if ($1) { ${3:default} }" . (unspecified-key "if (" p ") { " (p "default") " }"))
    ))
