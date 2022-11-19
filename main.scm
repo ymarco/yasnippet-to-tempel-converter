@@ -24,7 +24,7 @@ key <-- ([a-zA-Z_] / '-')+
 value <-- notNL+
 metadataEnd < '# --' NL
 mtStart < '# '
-mtSep < ': '
+mtSep < ' : ' / ': '
 
 snippet <-- (tab-stop / indent-mark / embedded-lisp / snippet-text)*
 
@@ -199,7 +199,25 @@ $>$0)" . (yasnippet (snippet
     . (yasnippet (snippet
                   (tab-stop (number "1")
                             (init-value
-                             (embedded-lisp "(current-time-string)"))))))))
+                             (embedded-lisp "(current-time-string)"))))))
+   ;; has a space between contributor and colon
+   ("# -*- mode: snippet -*-
+# contributor : Jimmy Wu <frozenthrone88@gmail.com>
+# group: meta
+# name: <meta name=\"...\" content=\"...\" />
+# --
+<meta name=\"${1:generator}\" content=\"${2:content}\" />"
+    . (yasnippet
+       (metadata
+        ((key "contributor") (value "Jimmy Wu <frozenthrone88@gmail.com>"))
+        ((key "group") (value "meta"))
+        ((key "name") (value "<meta name=\"...\" content=\"...\" />")))
+       (snippet
+        "<meta name=\""
+        (tab-stop (number "1") (init-value "generator"))
+        "\" content=\""
+        (tab-stop (number "2") (init-value "content"))
+        "\" />")))))
 
 (define-record-type <yasnippet>
   (make-yasnippet name key group uuid type
