@@ -19,9 +19,9 @@
 (define-peg-string-patterns
   "yasnippet <-- preamble? snippet !.
 preamble <- (modeline metadata? metadataEnd) / (metadata? metadataEnd)
-modeline < '# -*- mode: snippet -*-' NL
+modeline < '# -*-' notNL* '-*-' NL+
 metadata <-- metadataLine+
-metadataLine <- mtStart key mtSep value NL
+metadataLine <- mtStart key mtSep value NL+
 key <-- ([a-zA-Z_] / '-')+
 value <-- notNL+
 metadataEnd < '# --' NL
@@ -165,5 +165,23 @@ $0" . (yasnippet
      (snippet
       "\\complexity{$O("
       (tabStop (number "0"))
-      ")$}\n")))))
+      ")$}\n")))
+   ;; Unusual modeline
+   ("# -*- mode: snippet; require-final-newline: nil -*-
+# name: Header 3
+# key: h3
+# uuid: h3
+# --
+### ${1:Header 3}`(unless markdown-asymmetric-header \" ###\")`
+" . (yasnippet (metadata
+                ((key "name") (value "Header 3"))
+                ((key "key") (value "h3"))
+                ((key "uuid") (value "h3")))
+               (snippet
+                "### "
+                (tabStop (number "1") (initValue "Header 3"))
+                (embeddedLisp
+                 "(unless markdown-asymmetric-header \" ###\")")
+                "\n")))))
+
 
