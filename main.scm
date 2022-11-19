@@ -16,15 +16,15 @@
 
 (define-peg-string-patterns
   "yasnippet <-- preamble? snippet !.
-preamble <- (modeline metadata? metadataEnd) / (metadata? metadataEnd) / modeline
-modeline < '# -*-' (notNL !'*-')* '-*-' NL+
+preamble <- (modeline+ metadata? metadataEnd) / (metadata? metadataEnd) / modeline
+modeline < '#'+ ' -*-' (notNL !'*-')* '-*-' NL+
 metadata <-- metadataLine+
 metadataLine <- mtStart key mtSep value NL+
 key <-- ([a-zA-Z_] / '-')+
 value <-- notNL+
 metadataEnd < '# --' NL
 mtStart < '# '
-mtSep < ' : ' / ': '
+mtSep < ' : ' / ' :' / ': ' / ':'
 
 snippet <-- (tab-stop / indent-mark / embedded-lisp / snippet-text)*
 
@@ -226,7 +226,67 @@ math.max(${0:x, y, ...})" . (yasnippet (snippet
                                         "math.max("
                                         (tab-stop (number "0")
                                                   (init-value "x, y, ..."))
-                                        ")")))))
+                                        ")")))
+   ;; double hashes on modeline
+   ("## -*- mode: snippet -*-
+# name: receive
+# key: rcv
+# --
+receive do
+  $0
+end" . (yasnippet
+        (metadata
+         ((key "name") (value "receive"))
+         ((key "key") (value "rcv")))
+        (snippet
+         "receive do\n  "
+         (tab-stop (number "0"))
+         "\nend")))
+   ;; double modeline
+   ("# -*- mode: snippet -*-
+# -*- coding: utf-8 -*-
+# name: pr
+# key: pr
+# --
+(prn $1)
+$0" . (yasnippet
+       (metadata
+        ((key "name") (value "pr"))
+        ((key "key") (value "pr")))
+       (snippet
+        "(prn "
+        (tab-stop (number "1"))
+        ")\n"
+        (tab-stop (number "0")))))
+   ;; hashes after separator
+   ("# -*- mode: snippet -*-
+# name: cont
+# key: cont
+# uuid: cont
+# --
+# contributor: `user-full-name`"
+    . (yasnippet
+       (metadata
+        ((key "name") (value "cont"))
+        ((key "key") (value "cont"))
+        ((key "uuid") (value "cont")))
+       (snippet
+        "# contributor: "
+        (embedded-lisp "user-full-name"))))
+   ;; no space before metadata value
+   ("# -*- mode: snippet -*-
+# name: cont
+# key:#
+# uuid: cont
+# --
+aoeu"
+    . (yasnippet
+       (metadata
+        ((key "name") (value "cont"))
+        ((key "key") (value "#"))
+        ((key "uuid") (value "cont")))
+       (snippet "aoeu")))))
+
 
 
 (define-record-type <yasnippet>
