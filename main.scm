@@ -16,7 +16,7 @@
 
 (define-peg-string-patterns
   "yasnippet <-- preamble? snippet !.
-preamble <- (modeline metadata? metadataEnd) / (metadata? metadataEnd)
+preamble <- (modeline metadata? metadataEnd) / (metadata? metadataEnd) / modeline
 modeline < '# -*-' (notNL !'*-')* '-*-' NL+
 metadata <-- metadataLine+
 metadataLine <- mtStart key mtSep value NL+
@@ -217,7 +217,16 @@ $>$0)" . (yasnippet (snippet
         (tab-stop (number "1") (init-value "generator"))
         "\" content=\""
         (tab-stop (number "2") (init-value "content"))
-        "\" />")))))
+        "\" />")))
+   ;; modeline but no separator. I thought it wasn't legal but it shows up in a
+   ;; bunch of lua snippets
+   ("# -*- mode: snippet -*-
+math.max(${0:x, y, ...})" . (yasnippet (snippet
+                                        "math.max("
+                                        (tab-stop (number "0")
+                                                  (init-value "x, y, ..."))
+                                        ")")))))
+
 
 (define-record-type <yasnippet>
   (make-yasnippet name key group uuid type
