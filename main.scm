@@ -76,10 +76,20 @@ snippetText <- (escapedDollarOrGrave / notDollarOrGrave)* ")
   #f)
 
 (test
+ ;; basic
  '(("aoeu" . (yasnippet
               (snippet "aoeu")))
+   ;; tabStop
    ("aoeu$0" . (yasnippet
                 (snippet "aoeu" (tabStop (number "0")))))
+   ;; tabStop with initValue
+   ("aoeu${1:value})" . (yasnippet
+                         (snippet "aoeu" (tabStop (number "1")
+                                                  (initValue "value"))
+                                  ")")))
+   ;; escape sequences
+   ("test\\`\\$\\`\\\\" . (yasnippet (snippet "test`$`\\")))
+   ;; metadata
    ("# -*- mode: snippet -*-
 # name: emacs_value
 # key: ev
@@ -88,31 +98,48 @@ emacs_value" . (yasnippet (metadata ((key "name") (value "emacs_value"))
                                     ((key "key") (value "ev")))
                           (snippet "emacs_value")))
 
-   ;; ("# -*- mode: snippet -*-
-   ;; # name: overlay-put
-   ;; # key: ovp
-   ;; # --
-   ;; (overlay-put ${1: ov} ${2:property} ${0:value})
-   ;; " . (yasnippet (metadata (name "overlay-put")
-   ;;                          (key "ovp"))
-   ;;                (snippet "(overlay-put "
-   ;;                         (tabStop (number "1")
-   ;;                                  (initValue " ov"))
-   ;;                         " "
-   ;;                         (tabStop (number "2")
-   ;;                                  (initValue "property"))
-   ;;                         " "
-   ;;                         (tabStop (number "0")
-   ;;                                  (initValue "value"))
-   ;;                         ")")))
-   ))
-;; (match-pattern
-;;  yasnippet
-;;  "# key: value
-;; # key: value
-;; # --
-;; aoeu
-;; ")
-;; (define-peg-string-patterns
-;;   "testing < [x00-x200] / ' ' / '\t'")
-;; (match-pattern testing "\n")
+   ;; metadata with tabStops
+   ("(overlay-put ${1: ov} ${2:property} ${0:value})"
+    . (yasnippet (snippet
+                  "(overlay-put "
+                  (tabStop (number "1") (initValue " ov"))
+                  " "
+                  (tabStop (number "2") (initValue "property"))
+                  " "
+                  (tabStop (number "0") (initValue "value"))
+                  ")")))
+   ;; embeddedLisp
+   ("(overlay-put `(string ?a ?b ?c)`)"
+    . (yasnippet (snippet
+                  "(overlay-put "
+                  (embeddedLisp "(string ?a ?b ?c)")
+                  ")")))
+   ;; field transformation
+   ("$1 ${1:$(capitalize yas-text)}" . (yasnippet
+                                        (snippet
+                                         (tabStop (number "1"))
+                                         " "
+                                         (tabStop
+                                          (number "1")
+                                          (transformationExpr "(capitalize yas-text)")))))
+   ;; multiple transformations
+   ("${1:$(make-string (string-width yas-text) ?\\=)}
+${1:Title}
+${1:$(make-string (string-width yas-text) ?\\=)}
+
+$0" . (yasnippet
+       (snippet
+        (tabStop
+         (number "1")
+         (transformationExpr
+          "(make-string (string-width yas-text) ?\\=)"))
+        "\n"
+        (tabStop (number "1") (initValue "Title"))
+        "\n"
+        (tabStop
+         (number "1")
+         (transformationExpr
+          "(make-string (string-width yas-text) ?\\=)"))
+        "\n\n"
+        (tabStop (number "0")))))))
+
