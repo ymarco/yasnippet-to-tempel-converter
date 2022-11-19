@@ -28,18 +28,18 @@ metadataEnd < '# --' NL
 mtStart < '# '
 mtSep < ': '
 
-snippet <-- (tabStop / indentMark / embeddedLisp / snippetText)*
+snippet <-- (tab-stop / indent-mark / embedded-lisp / snippet-text)*
 
-tabStop <-- DOLLAR (number / (LCB (number COLON)? (transformationExpr / initValue) RCB))
+tab-stop <-- DOLLAR (number / (LCB (number COLON)? (transformation-expr / init-value) RCB))
 number <-- NUMBER
-initValue <-- (notRCB / embeddedLisp)*
+init-value <-- (notRCB / embedded-lisp)*
 
-indentMark <-- INDENTMARK
-embeddedLisp <-- GRAVE notGrave* GRAVE
+indent-mark <-- INDENT-MARK
+embedded-lisp <-- GRAVE notGrave* GRAVE
 
-transformationExpr <-- DOLLAR '(' balancedSexp ')'
-balancedSexp <- (sexpText / '(' balancedSexp ')')*
-sexpText <- escapedParen / notParen
+transformation-expr <-- DOLLAR '(' balancedSexp ')'
+balancedSexp <- (sexp-text / '(' balancedSexp ')')*
+sexp-text <- escapedParen / notParen
 escapedDollarOrGrave <- BACKSLASH ( '$' / '`' / '\\')
 escapedParen <- '\\' ('(' / ')' / '\\')
 
@@ -51,8 +51,8 @@ COLON < ':'
 NUMBER <- [0-9]
 BACKSLASH < '\\'
 GRAVE < '`'
-INDENTMARK < '$>'
-snippetText <- (escapedDollarOrGrave / notGrave) ")
+INDENT-MARK < '$>'
+snippet-text <- (escapedDollarOrGrave / notGrave) ")
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (parse-snippet snippet)
@@ -81,13 +81,13 @@ snippetText <- (escapedDollarOrGrave / notGrave) ")
  ;; basic
  '(("aoeu" . (yasnippet
               (snippet "aoeu")))
-   ;; tabStop
+   ;; tab-stop
    ("aoeu$0" . (yasnippet
-                (snippet "aoeu" (tabStop (number "0")))))
-   ;; tabStop with initValue
+                (snippet "aoeu" (tab-stop (number "0")))))
+   ;; tab-stop with init-value
    ("aoeu${1:value})" . (yasnippet
-                         (snippet "aoeu" (tabStop (number "1")
-                                                  (initValue "value"))
+                         (snippet "aoeu" (tab-stop (number "1")
+                                                  (init-value "value"))
                                   ")")))
    ;; escape sequences
    ("test\\`\\$\\`\\\\" . (yasnippet (snippet "test`$`\\")))
@@ -114,26 +114,26 @@ aoeu" . (yasnippet (metadata
    ("(overlay-put ${1: ov} ${2:property} ${0:value})"
     . (yasnippet (snippet
                   "(overlay-put "
-                  (tabStop (number "1") (initValue " ov"))
+                  (tab-stop (number "1") (init-value " ov"))
                   " "
-                  (tabStop (number "2") (initValue "property"))
+                  (tab-stop (number "2") (init-value "property"))
                   " "
-                  (tabStop (number "0") (initValue "value"))
+                  (tab-stop (number "0") (init-value "value"))
                   ")")))
-   ;; embeddedLisp
+   ;; embedded-lisp
    ("(overlay-put `(string ?a ?b ?c)`)"
     . (yasnippet (snippet
                   "(overlay-put "
-                  (embeddedLisp "(string ?a ?b ?c)")
+                  (embedded-lisp "(string ?a ?b ?c)")
                   ")")))
    ;; field transformation
    ("$1 ${1:$(capitalize yas-text)}" . (yasnippet
                                         (snippet
-                                         (tabStop (number "1"))
+                                         (tab-stop (number "1"))
                                          " "
-                                         (tabStop
+                                         (tab-stop
                                           (number "1")
-                                          (transformationExpr "(capitalize yas-text)")))))
+                                          (transformation-expr "(capitalize yas-text)")))))
    ;; multiple transformations
    ("${1:$(make-string (string-width yas-text) ?\\=)}
 ${1:Title}
@@ -141,19 +141,19 @@ ${1:$(make-string (string-width yas-text) ?\\=)}
 
 $0" . (yasnippet
        (snippet
-        (tabStop
+        (tab-stop
          (number "1")
-         (transformationExpr
+         (transformation-expr
           "(make-string (string-width yas-text) ?\\=)"))
         "\n"
-        (tabStop (number "1") (initValue "Title"))
+        (tab-stop (number "1") (init-value "Title"))
         "\n"
-        (tabStop
+        (tab-stop
          (number "1")
-         (transformationExpr
+         (transformation-expr
           "(make-string (string-width yas-text) ?\\=)"))
         "\n\n"
-        (tabStop (number "0")))))
+        (tab-stop (number "0")))))
    ;; unescaped verbatim dollar in snippet text
    ("# -*- mode: snippet -*-
 # name: complexity
@@ -166,7 +166,7 @@ $0" . (yasnippet
       ((key "key") (value "comp")))
      (snippet
       "\\complexity{$O("
-      (tabStop (number "0"))
+      (tab-stop (number "0"))
       ")$}\n")))
    ;; Unusual modeline
    ("# -*- mode: snippet; require-final-newline: nil -*-
@@ -181,16 +181,16 @@ $0" . (yasnippet
                 ((key "uuid") (value "h3")))
                (snippet
                 "### "
-                (tabStop (number "1") (initValue "Header 3"))
-                (embeddedLisp
+                (tab-stop (number "1") (init-value "Header 3"))
+                (embedded-lisp
                  "(unless markdown-asymmetric-header \" ###\")")
                 "\n")))
    ;; indent mark
    ("(progn
 $>$0)" . (yasnippet (snippet
                      "(progn\n"
-                     indentMark
-                     (tabStop (number "0"))
+                     indent-mark
+                     (tab-stop (number "0"))
                      ")")))))
 
 
