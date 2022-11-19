@@ -256,14 +256,14 @@ as yas.
 
 contributor, group, uuid, type, condition are ignored"
 
-  ;; determine which placeholders need names
-  (let ((placeholder-names (make-hash-table)))
+  ;; determine which fields need names
+  (let ((field-symbol-table (make-hash-table)))
     (for-each (lambda (atom)
                 (match atom
                   (('tab-stop ('number number) _more ...)
-                   (match (hash-ref placeholder-names number)
-                     (#f (hash-set! placeholder-names number 'anonymous))
-                     ('anonymous (hash-set! placeholder-names number 'named))))
+                   (match (hash-ref field-symbol-table number)
+                     (#f (hash-set! field-symbol-table number 'anonymous))
+                     ('anonymous (hash-set! field-symbol-table number 'named))))
                   (_ #f)))
               (yas-body yas))
     ;; final result
@@ -302,7 +302,7 @@ contributor, group, uuid, type, condition are ignored"
                            (_
                             expr))))
                       ('()
-                       (match (hash-ref placeholder-names number)
+                       (match (hash-ref field-symbol-table number)
                          ('named
                           `(s ,(placeholder-number->symbol number)))
                          ((or #f 'anonymous)
