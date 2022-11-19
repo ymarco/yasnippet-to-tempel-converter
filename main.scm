@@ -28,12 +28,13 @@ metadataEnd < '# --' NL
 mtStart < '# '
 mtSep < ': '
 
-snippet <-- (tabStop / embeddedLisp / snippetText)*
+snippet <-- (tabStop / indentMark / embeddedLisp / snippetText)*
 
 tabStop <-- DOLLAR (number / (LCB (number COLON)? (transformationExpr / initValue) RCB))
 number <-- NUMBER
 initValue <-- (notRCB / embeddedLisp)*
 
+indentMark <-- INDENTMARK
 embeddedLisp <-- GRAVE notGrave* GRAVE
 
 transformationExpr <-- DOLLAR '(' balancedSexp ')'
@@ -50,6 +51,7 @@ COLON < ':'
 NUMBER <- [0-9]
 BACKSLASH < '\\'
 GRAVE < '`'
+INDENTMARK < '$>'
 snippetText <- (escapedDollarOrGrave / notGrave) ")
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
@@ -182,6 +184,13 @@ $0" . (yasnippet
                 (tabStop (number "1") (initValue "Header 3"))
                 (embeddedLisp
                  "(unless markdown-asymmetric-header \" ###\")")
-                "\n")))))
+                "\n")))
+   ;; indent mark
+   ("(progn
+$>$0)" . (yasnippet (snippet
+                     "(progn\n"
+                     indentMark
+                     (tabStop (number "0"))
+                     ")")))))
 
 
