@@ -50,7 +50,7 @@ COLON < ':'
 NUMBER <- [0-9]
 BACKSLASH < '\\'
 GRAVE < '`'
-snippetText <- (escapedDollarOrGrave / notDollar) ")
+snippetText <- (escapedDollarOrGrave / notGrave) ")
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (parse-snippet snippet)
