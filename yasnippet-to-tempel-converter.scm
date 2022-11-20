@@ -339,7 +339,7 @@ aoeu"
 
 
 (define (placeholder-number->symbol n)
-  "2 => 'field-2"
+  "\"2\" => 'field-2"
   (string->symbol (string-append "field-" n)))
 
 (define (read-from-string s)
