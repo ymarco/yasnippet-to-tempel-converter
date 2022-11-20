@@ -59,8 +59,13 @@ GRAVE < '`'
 INDENT-MARK < '$>'
 snippet-text <- (escapedDollarOrGrave / notGrave) ")
 
-;; (peg:tree (match-pattern yasnippet *yasnippet*))
 (define (yasnippet-string->yasnippet-tree snippet)
+  "Convert the string in yas format SNIPPET to a tree representation.
+
+Parses metadata like name, uuid too.
+
+\"print $1\" => '(yasnippet (snippet \"print \" (tab-stop (number \"1\")))
+See the tests file for examples of more output."
   (peg:tree (match-pattern yasnippet snippet)))
 
 
@@ -80,6 +85,8 @@ snippet-text <- (escapedDollarOrGrave / notGrave) ")
   (body yas-body))
 
 (define (yasnippet-tree->yasnippet parsed)
+  "Convert the yasnippet tree (output of `yasnippet-string->yasnippet-tree') to a
+`<yasnippet>' object, which mostly amounts to putting the metadata into slots."
   (let ((name #f) (key #f) (group #f) (uuid #f) (type #f)
         (condition #f) (binding #f) (contributor #f)
         (body #f))
