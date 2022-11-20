@@ -74,15 +74,15 @@ See the tests file for examples of more output."
                   condition binding contributor
                   body)
   yasnippet?
-  (name yas-name)
-  (key yas-key)
-  (group yas-group)
-  (uuid yas-uuid)
-  (type yas-type)
-  (condition yas-condition)
-  (binding yas-binding)
-  (contributor yas-contributor)
-  (body yas-body))
+  (name yas-name set-yas-name!)
+  (key yas-key set-yas-key!)
+  (group yas-group set-yas-group!)
+  (uuid yas-uuid set-yas-uuid!)
+  (type yas-type set-yas-type!)
+  (condition yas-condition set-yas-condition!)
+  (binding yas-binding set-yas-binding!)
+  (contributor yas-contributor set-yas-contributor!)
+  (body yas-body set-yas-body!))
 
 (define (yasnippet-tree->yasnippet parsed)
   "Convert the yasnippet tree (output of `yasnippet-string->yasnippet-tree') to a
