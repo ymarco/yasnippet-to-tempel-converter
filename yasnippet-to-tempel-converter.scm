@@ -7,10 +7,10 @@
   #:use-module (ice-9 format)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-1)
-  #:export (parse-snippet
-            parsed-snippet->yasnippet
+  #:export (yasnippet-string->yasnippet-tree
+            yasnippet-tree->yasnippet
             yasnippet->tempel-snippet
-            yas-string->tempel))
+            yasnippet-string->tempel))
 
 ;; The string pattern equivalent of these doesn't match special chars e.g ' ' and
 ;; '(' for some reason, which is why they are written in sexp
@@ -60,7 +60,7 @@ INDENT-MARK < '$>'
 snippet-text <- (escapedDollarOrGrave / notGrave) ")
 
 ;; (peg:tree (match-pattern yasnippet *yasnippet*))
-(define (parse-snippet snippet)
+(define (yasnippet-string->yasnippet-tree snippet)
   (peg:tree (match-pattern yasnippet snippet)))
 
 (define (test-fn fn pairs)
@@ -80,7 +80,7 @@ snippet-text <- (escapedDollarOrGrave / notGrave) ")
   #f)
 
 (test-fn
- parse-snippet
+ yasnippet-string->yasnippet-tree
  ;; basic
  '(("aoeu" . (yasnippet
               (snippet "aoeu")))
@@ -311,7 +311,7 @@ aoeu"
   (contributor yas-contributor)
   (body yas-body))
 
-(define (parsed-snippet->yasnippet parsed)
+(define (yasnippet-tree->yasnippet parsed)
   (let ((name #f) (key #f) (group #f) (uuid #f) (type #f)
         (condition #f) (binding #f) (contributor #f)
         (body #f))
@@ -439,11 +439,11 @@ contributor, group, uuid, type, condition are ignored"
                           expr)))))
                (yas-body yas)))))
 
-(define (yas-string->tempel s)
-  (yasnippet->tempel-snippet (parsed-snippet->yasnippet (parse-snippet s))))
+(define (yasnippet-string->tempel s)
+  (yasnippet->tempel-snippet (yasnippet-tree->yasnippet (yasnippet-string->yasnippet-tree s))))
 
 (test-fn
- yas-string->tempel
+ yasnippet-string->tempel
  '(;; metadata
    ("# -*- mode: snippet -*-
 # name: emacs_value
