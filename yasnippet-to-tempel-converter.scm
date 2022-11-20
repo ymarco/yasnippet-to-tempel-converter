@@ -1,9 +1,16 @@
-(use-modules (ice-9 peg)
-             (ice-9 textual-ports)
-             (ice-9 pretty-print)
-             (ice-9 match)
-             (srfi srfi-9)
-             (srfi srfi-1))
+(define-module (yasnippet-to-tempel-converter)
+  #:use-module (ice-9 peg)
+  #:use-module (ice-9 textual-ports)
+  #:use-module (ice-9 pretty-print)
+  #:use-module (ice-9 ftw)
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 format)
+  #:use-module (srfi srfi-9)
+  #:use-module (srfi srfi-1)
+  #:export (parse-snippet
+            parsed-snippet->yasnippet
+            yasnippet->tempel-snippet
+            yas-string->tempel))
 
 ;; The string pattern equivalent of these doesn't match special chars e.g ' ' and
 ;; '(' for some reason, which is why they are written in sexp
@@ -388,7 +395,6 @@ contributor, group, uuid, type, condition are ignored"
                      ('number number)
                      more ...)
 
-                    ;; TODO handle the case where number = 0 (finish snippet)
                     (match more
                       ((('init-value value))
                        `(p ,(match value
