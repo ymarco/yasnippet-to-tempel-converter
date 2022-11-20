@@ -152,8 +152,10 @@ contributor, group, uuid, type, condition are ignored"
         (hash-set! field-symbol-table max-number-tab-stop 'last)))
 
     ;; final result
-    (cons (if (yas-key yas)
-              (string->symbol (yas-key yas))
+    (cons (or (and (yas-key yas)
+                   (string->symbol (yas-key yas)))
+              (and (yas-name yas)
+                   (string->symbol (yas-name yas)))
               'unspecified-key)
           (map (lambda (atom)
                  (match atom
