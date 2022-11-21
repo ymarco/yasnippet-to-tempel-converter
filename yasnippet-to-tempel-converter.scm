@@ -183,13 +183,13 @@ the other tab stops to determine whether this should be a named field."
          ;; yas mirror transformations act on yas-text as the
          ;; current field, while tempel has a var for each field.
          ;; Replace yas-text with the corresponding field symbol.
-
-         ;; TODO handle the case where expr is `yas-selected-text`
          (match expr
            ('yas-text
             (placeholder-number->symbol number))
            ((? list? expr)
             (map replace-yas-text expr))
+           ((or 'yas-selected-text '%)
+            'TODO-get-region)           ; not sure what to do here
            (_
             expr))))
       ('()
