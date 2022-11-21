@@ -123,7 +123,7 @@ See the tests file for examples of more output."
 
 (define (make-field-naming-table yas)
   "Return a hashtable where each field number (in string form) is mapped to either
-'anonymous (shouldn't be named), 'named or 'anonymous-and-last.
+'anonymous (shouldn't be named), 'named or 'last (meaning anonymous too).
 
 YAS should be a yasnippet object."
   (let ((field-symbol-table (make-hash-table)))
@@ -135,8 +135,8 @@ YAS should be a yasnippet object."
                      ('anonymous (hash-set! field-symbol-table number 'named))))
                   (_ #f)))
               (yas-body yas))
-    ;; if the last (tab-stop) is the one you'll get to last when tabbing, map
-    ;; that number to 'last
+    ;; if the last (tab-stop) is the one you'll get to last when tabbing (i.e
+    ;; largest number or 0), map that number to 'last
     (let ((max-number-tab-stop
            (hash-fold (lambda (k v max-k)
                         ;; 0 is the last one you jump to and therfore the max
