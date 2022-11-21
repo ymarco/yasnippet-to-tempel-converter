@@ -167,41 +167,41 @@ the other tab stops to determine whether this should be a named field."
                 ('number number)
                 more ...)
                tab-stop))
-   (match more
-     ((('init-value value))
-      `(p ,(match value
-             ((? string?)
-              value)
-             (('embedded-lisp expr)
-              (read-from-string expr)))
-        ;; emit field name only if named
-        ,@(if (eq? (hash-ref field-symbol-table number) 'named)
-              (list (placeholder-number->symbol number))
-              '())))
-     ((('transformation-expr expr))
-      (let replace-yas-text ((expr (read-from-string expr)))
-        ;; yas mirror transformations act on yas-text as the
-        ;; current field, while tempel has a var for each field.
-        ;; Replace yas-text with the corresponding field symbol.
+    (match more
+      ((('init-value value))
+       `(p ,(match value
+              ((? string?)
+               value)
+              (('embedded-lisp expr)
+               (read-from-string expr)))
+         ;; emit field name only if named
+         ,@(if (eq? (hash-ref field-symbol-table number) 'named)
+               (list (placeholder-number->symbol number))
+               '())))
+      ((('transformation-expr expr))
+       (let replace-yas-text ((expr (read-from-string expr)))
+         ;; yas mirror transformations act on yas-text as the
+         ;; current field, while tempel has a var for each field.
+         ;; Replace yas-text with the corresponding field symbol.
 
-        ;; TODO handle the case where expr is `yas-selected-text`
-        (match expr
-          ('yas-text
-           (placeholder-number->symbol number))
-          ((? list? expr)
-           (map replace-yas-text expr))
-          (_
-           expr))))
-     ('()
-      ;; if no init-value, the field might be a mirror
-      (match (hash-ref field-symbol-table number)
-        ('named
-         `(s ,(placeholder-number->symbol number)))
-        ;; not a mirror
-        ((or #f 'anonymous)
-         'p)
-        ('last
-         'q))))))
+         ;; TODO handle the case where expr is `yas-selected-text`
+         (match expr
+           ('yas-text
+            (placeholder-number->symbol number))
+           ((? list? expr)
+            (map replace-yas-text expr))
+           (_
+            expr))))
+      ('()
+       ;; if no init-value, the field might be a mirror
+       (match (hash-ref field-symbol-table number)
+         ('named
+          `(s ,(placeholder-number->symbol number)))
+         ;; not a mirror
+         ((or #f 'anonymous)
+          'p)
+         ('last
+          'q))))))
 
 (define (space-or-tab? c)
   (or (eq? c #\space)
@@ -217,7 +217,7 @@ the other tab stops to determine whether this should be a named field."
     (define (collect-char-to-string c)
       (set! future-string-chars (cons c future-string-chars)))
 
-    (define (flush-based-on-state)
+    (define (flush-state-data)
       (match state
         ('collecting-string
          (set! res-reversed (cons (apply string (reverse! future-string-chars)) res-reversed))
@@ -232,7 +232,7 @@ the other tab stops to determine whether this should be a named field."
         ('collecting-string
          (match c
            (#\newline
-            (flush-based-on-state)
+            (flush-state-data)
             (set! state 'see-if-theres-indent-after-newline))
            (_
             (collect-char-to-string c)
@@ -243,7 +243,7 @@ the other tab stops to determine whether this should be a named field."
            ((? space-or-tab?)
             (set! state 'consume-indent))
            (_
-            (flush-based-on-state)
+            (flush-state-data)
             (match c
               (#\newline #f)          ; keep state the same
               (_
@@ -253,7 +253,7 @@ the other tab stops to determine whether this should be a named field."
          (match c
            ((? space-or-tab?) #f)     ; carry on
            (_
-            (flush-based-on-state)
+            (flush-state-data)
             (match c
               (#\newline
                (set! state 'see-if-theres-indent-after-newline))
@@ -262,7 +262,7 @@ the other tab stops to determine whether this should be a named field."
                (set! state 'collecting-string))))))))
 
     (string-for-each advance-state-machine s)
-    (flush-based-on-state)
+    (flush-state-data)
     (reverse! res-reversed)))
 
 
