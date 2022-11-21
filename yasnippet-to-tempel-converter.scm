@@ -203,6 +203,69 @@ the other tab stops to determine whether this should be a named field."
         ('last
          'q))))))
 
+(define (space-or-tab? c)
+  (or (eq? c #\space)
+      (eq? c #\vtab)
+      (eq? c #\tab)))
+
+(define (yasnippet-body-string->tempel s)
+  "\"aoeu\\n\" => (\"aoeu\" n)"
+  (let ((state 'collecting-string)
+        (future-string-chars '())
+        (res-reversed '()))
+
+    (define (collect-char-to-string c)
+      (set! future-string-chars (cons c future-string-chars)))
+
+    (define (flush-based-on-state)
+      (match state
+        ('collecting-string
+         (set! res-reversed (cons (apply string (reverse! future-string-chars)) res-reversed))
+         (set! future-string-chars '()))
+        ('see-if-theres-indent-after-newline
+         (set! res-reversed (cons 'n res-reversed)))
+        ('consume-indent
+         (set! res-reversed (cons 'n> res-reversed)))))
+
+    (define (advance-state-machine c)
+      (match state
+        ('collecting-string
+         (match c
+           (#\newline
+            (flush-based-on-state)
+            (set! state 'see-if-theres-indent-after-newline))
+           (_
+            (collect-char-to-string c)
+            ;; keep state at 'collecting-string
+            )))
+        ('see-if-theres-indent-after-newline
+         (match c
+           ((? space-or-tab?)
+            (set! state 'consume-indent))
+           (_
+            (flush-based-on-state)
+            (match c
+              (#\newline #f)          ; keep state the same
+              (_
+               (collect-char-to-string c)
+               (set! state 'collecting-string))))))
+        ('consume-indent
+         (match c
+           ((? space-or-tab?) #f)     ; carry on
+           (_
+            (flush-based-on-state)
+            (match c
+              (#\newline
+               (set! state 'see-if-theres-indent-after-newline))
+              (_
+               (collect-char-to-string c)
+               (set! state 'collecting-string))))))))
+
+    (string-for-each advance-state-machine s)
+    (flush-based-on-state)
+    (reverse! res-reversed)))
+
+
 (define (yasnippet->tempel-snippet yas)
   "Return a single sexp defining a tempel snippet with the same key and expantion
 as yas.
@@ -217,20 +280,24 @@ condition are ignored"
                                       (string->symbol (yas-name yas)))
                                  'unspecified-key)))
     (cons tempel-snippet-name
-          (map (lambda (atom)
-                 (match atom
-                   ((? string?)
-                    atom)               ; TODO use n and n> from tempel
-                   (('tab-stop . _)
-                    (yasnippet-tab-stop->tempel-field atom field-symbol-table))
-                   (('embedded-lisp expr)
-                    (let ((expr (read-from-string expr)))
-                      ;; a stand-alone `%` can become 'r
-                      (if (or (eq? expr 'yas-selected-text)
-                              (eq? expr '%))
-                          'r
-                          expr)))))
-               (yas-body yas)))))
+          (concatenate!
+           (map (lambda (atom)
+                  ;; each application of the lambda produces a list to
+                  ;; concatenate to the tempel snippet, since some atoms can
+                  ;; produce 2+ elements (e.g "aoeu\n" in tempel would be "aoeu" n)
+                  (match atom
+                    ((? string?)
+                     (yasnippet-body-string->tempel atom))
+                    (('tab-stop . _)
+                     (list (yasnippet-tab-stop->tempel-field atom field-symbol-table)))
+                    (('embedded-lisp expr)
+                     (let ((expr (read-from-string expr)))
+                       ;; a stand-alone `%` can become 'r
+                       (if (or (eq? expr 'yas-selected-text)
+                               (eq? expr '%))
+                           (list 'r)
+                           (list expr))))))
+                (yas-body yas))))))
 
 (define (yasnippet-string->tempel s)
   (yasnippet->tempel-snippet (yasnippet-tree->yasnippet (yasnippet-string->yasnippet-tree s))))

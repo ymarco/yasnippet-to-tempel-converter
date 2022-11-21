@@ -290,6 +290,11 @@ emacs_value" '(ev "emacs_value"))
  ("use 'q when appropriate"
   "if ($1) { $3 }" '(unspecified-key "if (" p ") { " q " }"))
  ("use 'q when appropriate"
-  "if ($1) { ${3:default} }" '(unspecified-key "if (" p ") { " (p "default") " }")))
+  "if ($1) { ${3:default} }" '(unspecified-key "if (" p ") { " (p "default") " }"))
+ ("use 'n"
+  "a\nb" '(unspecified-key "a" n "b"))
+ ("use 'n and 'n>"
+  "print a\n begin\n   print b\nend" '(unspecified-key "print a" n>
+                                       "begin" n> "print b" n "end")))
 
 (test-end)
