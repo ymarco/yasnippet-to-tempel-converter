@@ -105,13 +105,14 @@ See the tests file for examples of more output."
                 ("contributor" (set! contributor value))
                 (_ (throw 'invalid-metadata-type-error key value))))
             keys values))
+      ;; no metadata? keep vars as #f
       (_ #f))
-    (let* ((snippet (last parsed))
-           (body (cdr snippet)))
+    (match-let ((('yasnippet metadata ...
+                             ('snippet . body))
+                 parsed))
       (make-yasnippet name key group uuid type
                       condition binding contributor
                       body))))
-
 
 (define (placeholder-number->symbol n)
   "\"2\" => 'field-2"
@@ -120,13 +121,11 @@ See the tests file for examples of more output."
 (define (read-from-string s)
   (call-with-input-string s read))
 
-(define (yasnippet->tempel-snippet yas)
-  "Return a single sexp defining a tempel snippet with the same key and expantion
-as yas.
+(define (make-field-naming-table yas)
+  "Return a hashtable where each field number (in string form) is mapped to either
+'anonymous (shouldn't be named), 'named or 'anonymous-and-last.
 
-contributor, group, uuid, type, condition are ignored"
-
-  ;; determine which fields need names
+YAS should be a yasnippet object."
   (let ((field-symbol-table (make-hash-table)))
     (for-each (lambda (atom)
                 (match atom
@@ -137,7 +136,7 @@ contributor, group, uuid, type, condition are ignored"
                   (_ #f)))
               (yas-body yas))
     ;; if the last (tab-stop) is the one you'll get to last when tabbing, map
-    ;; that number to 'last in field-symbol-table
+    ;; that number to 'last
     (let ((max-number-tab-stop
            (hash-fold (lambda (k v max-k)
                         ;; 0 is the last one you jump to and therfore the max
@@ -157,13 +156,22 @@ contributor, group, uuid, type, condition are ignored"
       (when (and (equal? max-number-tab-stop last-tab-stop-number)
                  (not (eq? (hash-ref field-symbol-table max-number-tab-stop) 'named)))
         (hash-set! field-symbol-table max-number-tab-stop 'last)))
+    field-symbol-table))
 
-    ;; final result
-    (cons (or (and (yas-key yas)
-                   (string->symbol (yas-key yas)))
-              (and (yas-name yas)
-                   (string->symbol (yas-name yas)))
-              'unspecified-key)
+(define (yasnippet->tempel-snippet yas)
+  "Return a single sexp defining a tempel snippet with the same key and expantion
+as yas.
+
+Only key, name and body are examined; contributor, group, uuid, type and
+condition are ignored"
+
+  (let ((field-symbol-table (make-field-naming-table yas))
+        (tempel-snippet-name (or (and (yas-key yas)
+                                      (string->symbol (yas-key yas)))
+                                 (and (yas-name yas)
+                                      (string->symbol (yas-name yas)))
+                                 'unspecified-key)))
+    (cons tempel-snippet-name
           (map (lambda (atom)
                  (match atom
                    ((? string?)
