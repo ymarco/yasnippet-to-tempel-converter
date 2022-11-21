@@ -270,7 +270,9 @@ the other tab stops to determine whether this should be a named field."
   "Return a single sexp defining a tempel snippet with the same key and expantion
 as yas.
 
-Only key, name and body are examined; contributor, group, uuid, type and
+Note: tempel's r>, %, o, (r ...) and (r> ...) are  never produced
+
+Note: only key, name and body are examined; contributor, group, uuid, type and
 condition are ignored"
 
   (let ((field-symbol-table (make-field-naming-table yas))
