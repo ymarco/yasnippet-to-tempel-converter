@@ -158,6 +158,51 @@ YAS should be a yasnippet object."
         (hash-set! field-symbol-table max-number-tab-stop 'last)))
     field-symbol-table))
 
+(define (yasnippet-tab-stop->tempel-field tab-stop field-symbol-table)
+  "Convert (tab-stop (number ...) ...) to tempel form like (p ... ...).
+
+NAMING-TABLE should be a result of `make-field-naming-table'; we need info about
+the other tab stops to determine whether this should be a named field."
+  (match-let ((('tab-stop
+                ('number number)
+                more ...)
+               tab-stop))
+   (match more
+     ((('init-value value))
+      `(p ,(match value
+             ((? string?)
+              value)
+             (('embedded-lisp expr)
+              (read-from-string expr)))
+        ;; emit field name only if named
+        ,@(if (eq? (hash-ref field-symbol-table number) 'named)
+              (list (placeholder-number->symbol number))
+              '())))
+     ((('transformation-expr expr))
+      (let replace-yas-text ((expr (read-from-string expr)))
+        ;; yas mirror transformations act on yas-text as the
+        ;; current field, while tempel has a var for each field.
+        ;; Replace yas-text with the corresponding field symbol.
+
+        ;; TODO handle the case where expr is `yas-selected-text`
+        (match expr
+          ('yas-text
+           (placeholder-number->symbol number))
+          ((? list? expr)
+           (map replace-yas-text expr))
+          (_
+           expr))))
+     ('()
+      ;; if no init-value, the field might be a mirror
+      (match (hash-ref field-symbol-table number)
+        ('named
+         `(s ,(placeholder-number->symbol number)))
+        ;; not a mirror
+        ((or #f 'anonymous)
+         'p)
+        ('last
+         'q))))))
+
 (define (yasnippet->tempel-snippet yas)
   "Return a single sexp defining a tempel snippet with the same key and expantion
 as yas.
@@ -176,45 +221,8 @@ condition are ignored"
                  (match atom
                    ((? string?)
                     atom)               ; TODO use n and n> from tempel
-                   (('tab-stop
-                     ('number number)
-                     more ...)
-
-                    (match more
-                      ((('init-value value))
-                       `(p ,(match value
-                              ((? string?)
-                               value)
-                              (('embedded-lisp expr)
-                               (read-from-string expr)))
-                         ;; emit field name only if named
-                         ,@(if (eq? (hash-ref field-symbol-table number) 'named)
-                               (list (placeholder-number->symbol number))
-                               '())))
-                      ((('transformation-expr expr))
-                       (let replace-yas-text ((expr (read-from-string expr)))
-                         ;; yas mirror transformations act on yas-text as the
-                         ;; current field, while tempel has a var for each field.
-                         ;; Replace yas-text with the corresponding field symbol.
-
-                         ;; TODO handle the case where expr is `yas-selected-text`
-                         (match expr
-                           ('yas-text
-                            (placeholder-number->symbol number))
-                           ((? list? expr)
-                            (map replace-yas-text expr))
-                           (_
-                            expr))))
-                      ('()
-                       ;; if no init-value, the field might be a mirror
-                       (match (hash-ref field-symbol-table number)
-                         ('named
-                          `(s ,(placeholder-number->symbol number)))
-                         ;; not a mirror
-                         ((or #f 'anonymous)
-                          'p)
-                         ('last
-                          'q)))))
+                   (('tab-stop . _)
+                    (yasnippet-tab-stop->tempel-field atom field-symbol-table))
                    (('embedded-lisp expr)
                     (let ((expr (read-from-string expr)))
                       ;; a stand-alone `%` can become 'r
